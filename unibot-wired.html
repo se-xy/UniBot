@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>UniBot - University of Dunaújváros</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Manrope:wght@600;700;800&display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: "#001531",
+                            light: "#2f476d",
+                            dark: "#000a1a"
+                        },
+                        secondary: {
+                            DEFAULT: "#225eab",
+                            light: "#7aacfe",
+                            dark: "#003f7f"
+                        },
+                        surface: {
+                            DEFAULT: "#f9f9ff",
+                            container: "#e7eeff",
+                            high: "#dee8ff",
+                            highest: "#d7e3fc"
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Manrope', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c4c6cf;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #74777f;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #74777f;
+            border-radius: 50%;
+            display: inline-block;
+            animation: typing-bounce 1.2s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing-bounce {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+
+            30% {
+                transform: translateY(-5px);
+                opacity: 1;
+            }
+        }
+
+        .chat-bubble-enter {
+            animation: bubble-in 0.2s ease-out both;
+        }
+
+        @keyframes bubble-in {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .bot-text {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Glassmorphism effects */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .dark .glass {
+            background: rgba(0, 21, 49, 0.7);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-surface dark:bg-[#000d1d] text-primary dark:text-slate-200 font-sans h-screen overflow-hidden antialiased flex flex-col md:flex-row transition-colors duration-300">
+
+    <!-- Left Sidebar -->
+    <aside
+        class="fixed left-0 top-0 h-screen w-[260px] hidden lg:flex flex-col bg-white dark:bg-[#001531] border-r border-slate-200 dark:border-slate-800 p-6 gap-4 z-30 shadow-sm transition-colors duration-300">
+        <!-- Brand -->
+        <div class="flex justify-center mb-6">
+            <img src="DUELOGO-alkalmazott.png" alt="DUE Logo" class="h-12 w-auto object-contain">
+        </div>
+
+        <!-- New Chat CTA -->
+        <button id="new-conversation-btn"
+            class="w-full bg-secondary text-white rounded-xl py-3 px-4 font-semibold hover:bg-secondary-dark transition-all flex items-center justify-center gap-2 shadow-md active:scale-95">
+            <span class="material-symbols-outlined text-[20px]">add</span>
+            <span data-i18n="new_chat">New Conversation</span>
+        </button>
+
+        <!-- Navigation / History -->
+        <div class="flex-1 overflow-y-auto mt-4 flex flex-col gap-2">
+            <div class="flex items-center justify-between px-2 mb-2">
+                <div class="font-mono text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest"
+                    data-i18n="recent">Recent</div>
+                <button onclick="clearHistory()"
+                    class="text-[10px] text-slate-400 hover:text-red-500 transition-colors uppercase tracking-widest font-bold">Clear</button>
+            </div>
+            <div id="recent-list" class="flex flex-col gap-1">
+                <!-- Recent items injected here -->
+            </div>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <button id="lang-toggle" onclick="toggleLanguage()"
+                class="text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400">
+                EN / HU
+            </button>
+            <button id="theme-toggle" onclick="toggleTheme()"
+                class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-400">
+                <span class="material-symbols-outlined" id="theme-icon">dark_mode</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main
+        class="flex-1 flex flex-col lg:ml-[260px] xl:mr-[320px] h-screen bg-surface dark:bg-[#000d1d] relative transition-colors duration-300">
+        <!-- Top Navigation Bar -->
+        <header
+            class="h-16 flex items-center justify-between px-8 border-b border-slate-200 dark:border-slate-800 glass sticky top-0 z-20">
+            <div class="flex items-center gap-3">
+                <span class="hidden sm:inline text-slate-500 dark:text-slate-400 text-sm font-medium"
+                    data-i18n="university_name">University of Dunaújváros</span>
+                <span class="hidden sm:inline text-slate-300 dark:text-slate-700">/</span>
+                <span class="text-primary dark:text-white font-bold text-sm" data-i18n="assistant_name">AI
+                    Assistant</span>
+            </div>
+            <div id="status-indicator"
+                class="flex items-center gap-2 bg-white/50 dark:bg-slate-900/50 px-3 py-1.5 rounded-full border border-slate-200/50 dark:border-slate-700/50">
+                <div id="status-dot" class="w-2 h-2 rounded-full bg-green-500"></div>
+                <span id="status-text" class="font-mono text-[10px] text-slate-600 dark:text-slate-400">Connected</span>
+            </div>
+        </header>
+
+        <!-- Chat Viewport -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-10 flex flex-col relative" id="chat-container">
+            <!-- Welcome State -->
+            <div class="max-w-2xl mx-auto w-full mt-12 md:mt-24 flex flex-col items-center text-center px-4"
+                id="empty-state">
+                <div
+                    class="w-20 h-20 bg-secondary/10 dark:bg-secondary/20 rounded-3xl flex items-center justify-center mb-8 rotate-3 hover:rotate-0 transition-transform duration-300">
+                    <span class="material-symbols-outlined text-secondary text-4xl">auto_awesome</span>
+                </div>
+                <h2 class="font-display font-extrabold text-4xl md:text-5xl text-primary dark:text-white mb-4 tracking-tight"
+                    data-i18n="welcome_title">How can I help you?</h2>
+                <p class="text-slate-600 dark:text-slate-400 text-lg mb-12 max-w-lg leading-relaxed"
+                    data-i18n="welcome_desc">Your personal assistant for academic, administrative, and campus life
+                    inquiries at DUE.</p>
+
+                <!-- Prompt Suggestions -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                    <button data-prompt="What are the key dates in the academic calendar?"
+                        class="suggestion-btn group p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-left hover:border-secondary transition-all hover:shadow-xl hover:-translate-y-1">
+                        <span
+                            class="material-symbols-outlined text-secondary mb-3 group-hover:scale-110 transition-transform">calendar_month</span>
+                        <div class="font-bold text-primary dark:text-white" data-i18n="suggest_calendar">Academic
+                            calendar</div>
+                        <div class="text-xs text-slate-500 mt-1" data-i18n="suggest_calendar_desc">Important semester
+                            dates</div>
+                    </button>
+                    <button data-prompt="What programs are available in English at DUE?"
+                        class="suggestion-btn group p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-left hover:border-secondary transition-all hover:shadow-xl hover:-translate-y-1">
+                        <span
+                            class="material-symbols-outlined text-secondary mb-3 group-hover:scale-110 transition-transform">school</span>
+                        <div class="font-bold text-primary dark:text-white" data-i18n="suggest_programs">Programs</div>
+                        <div class="text-xs text-slate-500 mt-1" data-i18n="suggest_programs_desc">English degree
+                            options</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Message Thread -->
+            <div id="messages" class="max-w-3xl mx-auto w-full flex flex-col gap-6 hidden"></div>
+            <div class="h-32 flex-shrink-0"></div>
+        </div>
+
+        <!-- Input Area -->
+        <div
+            class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-surface dark:from-[#000d1d] via-surface/90 dark:via-[#000d1d]/90 to-transparent pt-12 pb-8 px-6 z-10">
+            <div class="max-w-3xl mx-auto">
+                <div id="input-box"
+                    class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex items-end p-2 transition-all focus-within:ring-2 focus-within:ring-secondary/20">
+                    <textarea id="message-input"
+                        class="flex-1 bg-transparent border-none focus:ring-0 resize-none max-h-48 min-h-[52px] py-3.5 px-4 text-primary dark:text-white placeholder:text-slate-400"
+                        placeholder="Type your question..." rows="1"></textarea>
+                    <button id="send-btn"
+                        class="m-1 p-3 bg-secondary text-white rounded-xl hover:bg-secondary-dark transition-all flex items-center justify-center w-12 h-12 shadow-lg disabled:opacity-30 active:scale-90">
+                        <span class="material-symbols-outlined text-[24px]">arrow_upward</span>
+                    </button>
+                </div>
+                <div class="text-center mt-3">
+                    <span class="text-[10px] text-slate-400 font-mono tracking-widest uppercase"
+                        data-i18n="input_hint">Press Enter to send</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Right Sidebar (Resources) -->
+    <aside
+        class="fixed right-0 top-0 h-screen w-[320px] hidden xl:flex flex-col bg-white dark:bg-[#001531] border-l border-slate-200 dark:border-slate-800 p-8 gap-8 z-30 transition-colors duration-300">
+        <div class="pt-4">
+            <h3 class="font-mono text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6"
+                data-i18n="quick_links">Quick Links</h3>
+            <div class="flex flex-col gap-4">
+                <a href="https://stipendiumhungaricum.hu/" target="_blank"
+                    class="group flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
+                    <span
+                        class="font-bold text-sm text-slate-700 dark:text-slate-300 group-hover:text-secondary">Stipendium</span>
+                    <span class="material-symbols-outlined text-slate-300 text-[18px]">north_east</span>
+                </a>
+                <a href="https://www.uniduna.hu/images/documentsfordownload/campus_terkep_ENG.png" target="_blank"
+                    class="group flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
+                    <span class="font-bold text-sm text-slate-700 dark:text-slate-300 group-hover:text-secondary"
+                        data-i18n="link_map">Campus Map</span>
+                    <span class="material-symbols-outlined text-slate-300 text-[18px]">map</span>
+                </a>
+                <a href="https://www.uniduna.hu/neptun" target="_blank"
+                    class="group flex items-center justify-between p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
+                    <span class="font-bold text-sm text-slate-700 dark:text-slate-300 group-hover:text-secondary">Neptun
+                        Login</span>
+                    <span class="material-symbols-outlined text-slate-300 text-[18px]">login</span>
+                </a>
+            </div>
+        </div>
+
+        <div
+            class="mt-auto p-6 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="material-symbols-outlined text-secondary text-[20px]">contact_support</span>
+                <span class="font-bold text-sm text-primary dark:text-white" data-i18n="human_help">Human Support</span>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4" data-i18n="human_help_desc">Can't
+                find what you need? The International Office is here to help.</p>
+            <a href="https://www.uniduna.hu/en/about-us/contacts" target="_blank"
+                class="inline-flex items-center gap-2 text-xs font-bold text-secondary hover:text-secondary-dark transition-colors">
+                <span data-i18n="contact_office">Contact Office</span>
+                <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </a>
+        </div>
+    </aside>
+
+    <script>
+        const WEBHOOK_URL = 'https://rob-i.app.n8n.cloud/webhook/university-chat';
+        const STUDENT_NAME = 'Student';
+
+        // --- Translations ---
+        const translations = {
+            en: {
+                new_chat: "New Conversation",
+                recent: "Recent",
+                university_name: "University of Dunaújváros",
+                assistant_name: "AI Assistant",
+                welcome_title: "How can I help you?",
+                welcome_desc: "Your personal assistant for academic, administrative, and campus life inquiries at DUE.",
+                suggest_calendar: "Academic calendar",
+                suggest_calendar_desc: "Important semester dates",
+                suggest_programs: "Programs",
+                suggest_programs_desc: "English degree options",
+                input_hint: "Press Enter to send",
+                quick_links: "Quick Links",
+                link_map: "Campus Map",
+                human_help: "Human Support",
+                human_help_desc: "Can't find what you need? The International Office is here to help.",
+                contact_office: "Contact Office",
+                connected: "Connected",
+                thinking: "Thinking...",
+                error: "Error"
+            },
+            hu: {
+                new_chat: "Új beszélgetés",
+                recent: "Előzmények",
+                university_name: "Dunaújvárosi Egyetem",
+                assistant_name: "AI Asszisztens",
+                welcome_title: "Miben segíthetek?",
+                welcome_desc: "Az Ön személyes asszisztense tanulmányi, adminisztratív és egyetemi élettel kapcsolatos kérdésekben a DUE-n.",
+                suggest_calendar: "Tanulmányi rend",
+                suggest_calendar_desc: "Fontos féléves dátumok",
+                suggest_programs: "Képzések",
+                suggest_programs_desc: "Magyar nyelvű szakok",
+                input_hint: "Nyomja meg az Entert a küldéshez",
+                quick_links: "Gyors linkek",
+                link_map: "Egyetemi térkép",
+                human_help: "Emberi segítség",
+                human_help_desc: "Nem találja, amit keres? A Nemzetközi Iroda készséggel segít.",
+                contact_office: "Kapcsolatfelvétel",
+                connected: "Kapcsolódva",
+                thinking: "Gondolkodik...",
+                error: "Hiba"
+            }
+        };
+
+        // --- State Management ---
+        let currentLang = localStorage.getItem('unibot_lang') || 'en';
+        let sessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+        let isLoading = false;
+        let currentMessages = [];
+        let recentSessions = JSON.parse(localStorage.getItem('unibot_sessions') || '[]');
+
+        // --- DOM Elements ---
+        const chatContainer = document.getElementById('chat-container');
+        const messagesEl = document.getElementById('messages');
+        const emptyState = document.getElementById('empty-state');
+        const inputEl = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const recentList = document.getElementById('recent-list');
+
+        // --- Core Functions ---
+        function init() {
+            applyLanguage();
+            applyTheme();
+            renderRecent();
+
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+            applyTheme();
+        }
+
+        function applyTheme() {
+            const themeIcon = document.getElementById('theme-icon');
+            if (document.documentElement.classList.contains('dark')) {
+                themeIcon.textContent = 'light_mode';
+            } else {
+                themeIcon.textContent = 'dark_mode';
+            }
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'hu' : 'en';
+            localStorage.setItem('unibot_lang', currentLang);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = translations[currentLang][key];
+            });
+            inputEl.placeholder = currentLang === 'en' ? "Type your question..." : "Írja ide a kérdését...";
+            setStatus('connected');
+        }
+
+        function renderRecent() {
+            recentList.innerHTML = '';
+            recentSessions.forEach((session) => {
+                const a = document.createElement('a');
+                a.className = "group flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-500 hover:text-secondary hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all cursor-pointer truncate";
+                a.innerHTML = `
+                    <span class="material-symbols-outlined text-[18px] opacity-40 group-hover:opacity-100">chat</span>
+                    <span class="truncate">${escapeHtml(session.title)}</span>
+                `;
+                a.onclick = () => loadSession(session.id);
+                recentList.appendChild(a);
+            });
+        }
+
+        function clearHistory() {
+            if (confirm(currentLang === 'en' ? 'Clear all chat history?' : 'Törli az összes előzményt?')) {
+                recentSessions = [];
+                localStorage.removeItem('unibot_sessions');
+                renderRecent();
+                // If we are currently in an old session, reset to a new one
+                document.getElementById('new-conversation-btn').click();
+            }
+        }
+
+        function loadSession(id) {
+            const session = recentSessions.find(s => s.id === id);
+            if (!session) return;
+
+            sessionId = session.id;
+            currentMessages = [...session.messages];
+
+            messagesEl.innerHTML = '';
+            emptyState.classList.add('hidden');
+            messagesEl.classList.remove('hidden');
+
+            currentMessages.forEach(msg => {
+                if (msg.role === 'user') appendUserBubble(msg.content, false);
+                else appendBotBubble(msg.content, false);
+            });
+
+            scrollToBottom();
+        }
+
+        function saveCurrentSession() {
+            if (currentMessages.length === 0) return;
+
+            const existingIndex = recentSessions.findIndex(s => s.id === sessionId);
+            const sessionData = {
+                id: sessionId,
+                title: currentMessages[0].content.substring(0, 30) + (currentMessages[0].content.length > 30 ? '...' : ''),
+                messages: currentMessages,
+                timestamp: Date.now()
+            };
+
+            if (existingIndex > -1) {
+                recentSessions[existingIndex] = sessionData;
+            } else {
+                recentSessions.unshift(sessionData);
+            }
+
+            // Keep only last 5 sessions
+            recentSessions = recentSessions.slice(0, 5);
+            localStorage.setItem('unibot_sessions', JSON.stringify(recentSessions));
+            renderRecent();
+        }
+
+        function setStatus(state) {
+            const map = {
+                connected: { dot: 'bg-green-500', textKey: 'connected' },
+                loading: { dot: 'bg-amber-500', textKey: 'thinking' },
+                error: { dot: 'bg-red-500', textKey: 'error' },
+            };
+            const s = map[state] || map.connected;
+            statusDot.className = `w-2 h-2 rounded-full ${s.dot} transition-colors duration-500`;
+            statusText.textContent = translations[currentLang][s.textKey];
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+        }
+
+        inputEl.addEventListener('input', () => {
+            inputEl.style.height = 'auto';
+            inputEl.style.height = Math.min(inputEl.scrollHeight, 192) + 'px';
+        });
+
+        function appendUserBubble(text, shouldSave = true) {
+            if (shouldSave) currentMessages.push({ role: 'user', content: text });
+
+            const div = document.createElement('div');
+            div.className = 'chat-bubble-enter flex justify-end';
+            div.innerHTML = `
+                <div class="max-w-[85%] bg-secondary text-white rounded-2xl rounded-tr-none px-5 py-3.5 shadow-lg text-sm font-medium leading-relaxed">
+                    ${escapeHtml(text)}
+                </div>
+            `;
+            messagesEl.appendChild(div);
+            scrollToBottom();
+            if (shouldSave) saveCurrentSession();
+        }
+
+        function appendBotBubble(text, shouldSave = true) {
+            if (shouldSave) currentMessages.push({ role: 'bot', content: text });
+
+            const div = document.createElement('div');
+            div.className = 'chat-bubble-enter flex justify-start gap-3';
+            div.innerHTML = `
+                <div class="w-9 h-9 bg-primary dark:bg-secondary rounded-xl flex-shrink-0 flex items-center justify-center text-white text-[10px] font-black shadow-md mt-1">DUE</div>
+                <div class="max-w-[85%] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl rounded-tl-none px-5 py-3.5 shadow-sm text-sm leading-relaxed bot-text dark:text-slate-200">
+                    ${escapeHtml(text)}
+                </div>
+            `;
+            messagesEl.appendChild(div);
+            scrollToBottom();
+            if (shouldSave) saveCurrentSession();
+        }
+
+        function appendErrorBubble(msg) {
+            const div = document.createElement('div');
+            div.className = 'chat-bubble-enter flex justify-center py-2';
+            div.innerHTML = `
+                <div class="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs px-4 py-2 rounded-full border border-red-100 dark:border-red-900/50">
+                    ${escapeHtml(msg)}
+                </div>
+            `;
+            messagesEl.appendChild(div);
+            scrollToBottom();
+        }
+
+        let typingIndicatorEl = null;
+        function showTypingIndicator() {
+            if (typingIndicatorEl) return;
+            typingIndicatorEl = document.createElement('div');
+            typingIndicatorEl.className = 'flex justify-start gap-3 items-end mb-4';
+            typingIndicatorEl.innerHTML = `
+                <div class="w-9 h-9 bg-primary dark:bg-secondary rounded-xl flex-shrink-0 flex items-center justify-center text-white text-[10px] font-black shadow-md">DUE</div>
+                <div class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl rounded-tl-none px-5 py-3.5 flex gap-1.5 items-center">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </div>
+            `;
+            messagesEl.appendChild(typingIndicatorEl);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            if (typingIndicatorEl) {
+                typingIndicatorEl.remove();
+                typingIndicatorEl = null;
+            }
+        }
+
+        async function sendMessage(text) {
+            const trimmed = text.trim();
+            if (!trimmed || isLoading) return;
+
+            isLoading = true;
+            sendBtn.disabled = true;
+            inputEl.value = '';
+            inputEl.style.height = 'auto';
+
+            emptyState.classList.add('hidden');
+            messagesEl.classList.remove('hidden');
+
+            appendUserBubble(trimmed);
+            setStatus('loading');
+            showTypingIndicator();
+
+            try {
+                const res = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: trimmed,
+                        sessionId: sessionId,
+                        studentName: STUDENT_NAME,
+                        lang: currentLang
+                    }),
+                });
+
+                removeTypingIndicator();
+
+                if (!res.ok) {
+                    appendErrorBubble(`Connection error (${res.status})`);
+                    setStatus('error');
+                    setTimeout(() => setStatus('connected'), 3000);
+                } else {
+                    const data = await res.json();
+                    if (data.success && data.reply) {
+                        appendBotBubble(data.reply);
+                        if (data.sessionId) sessionId = data.sessionId;
+                    } else {
+                        appendErrorBubble('Unexpected response format.');
+                    }
+                    setStatus('connected');
+                }
+            } catch (err) {
+                removeTypingIndicator();
+                appendErrorBubble('Could not reach UniBot server.');
+                setStatus('error');
+                setTimeout(() => setStatus('connected'), 3000);
+            } finally {
+                isLoading = false;
+                sendBtn.disabled = false;
+                inputEl.focus();
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        // --- Event Listeners ---
+        sendBtn.addEventListener('click', () => sendMessage(inputEl.value));
+        inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(inputEl.value);
+            }
+        });
+
+        document.querySelectorAll('.suggestion-btn').forEach(btn => {
+            btn.addEventListener('click', () => sendMessage(btn.dataset.prompt));
+        });
+
+        document.getElementById('new-conversation-btn').addEventListener('click', () => {
+            sessionId = 'session-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+            currentMessages = [];
+            messagesEl.innerHTML = '';
+            messagesEl.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            inputEl.focus();
+            setStatus('connected');
+        });
+
+        init();
+    </script>
+</body>
+
+</html>
