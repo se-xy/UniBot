@@ -2,7 +2,7 @@
 
 A retrieval-augmented (RAG) chatbot that answers student questions about the University of Dunaújváros using content scraped from the official university website. The front-end is a single static page; the backend is an n8n workflow that retrieves relevant website content from a vector database and generates an answer with an LLM.
 
-**Live demo:** https://se-xy.github.io/UniBot/
+> **Status: backend temporarily offline.** The chat page still loads at https://se-xy.github.io/UniBot/, but the n8n backend it talks to is being migrated to a self-hosted n8n instance (Docker), so questions will currently return a connection error. This README documents the architecture; a working demo and recorded walkthrough will be added when the migration is done.
 
 <!-- Add a screenshot: docs/screenshot.png -->
 
@@ -82,6 +82,7 @@ Response:
 
 - Answers are only as current as the last crawl; scheduled re-indexing is planned.
 - The webhook is public; production use would add rate limiting and an origin check.
+- In progress: moving the backend from n8n Cloud to self-hosted n8n (Docker) and restoring the live demo.
 - Planned: source links in each answer, and publishing the n8n workflow export in this repo.
 
 ## Author
